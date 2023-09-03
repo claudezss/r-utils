@@ -14,9 +14,9 @@ path = "src/lib.rs"
 [dependencies]
 dotenv = {version = "0"}
 clap = {version = "4", features = ["derive"]}
-serde = "1"
+serde = {version = "1", features = ["derive"]}
 serde_json = "1"
-
+tokio = {version = "1", features = ["full"]}
 
 # s3
 aws-config = {version = "0", optional = true}
@@ -24,7 +24,6 @@ aws-sdk-s3 = {version = "0", optional = true}
 chrono = {version = "0", optional = true}
 
 # s3-sync
-tokio = {version = "1", features = ["macros"] , optional = true}
 curl = {version = "0", optional = true}
 
 
@@ -33,5 +32,5 @@ totp-rs = {version = "5", features = ["qr"], optional = true}
 
 [features]
 s3 = ["dep:aws-config", "dep:aws-sdk-s3", "dep:chrono"]
-s3-sync = ["s3", "dep:tokio", "dep:curl"]
+s3-sync = ["s3", "dep:curl"]
 mfa = ["dep:totp-rs"]

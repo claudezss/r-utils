@@ -3,6 +3,9 @@ pub mod s3_sync;
 #[cfg(feature = "s3-sync")]
 pub use s3_sync::{sync, S3SyncArgs};
 
+#[cfg(feature = "s3")]
+pub mod s3;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -19,11 +22,11 @@ enum Commands {
     S3Sync(S3SyncArgs),
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
-    match &cli.command {
+    match cli.command {
         #[cfg(feature = "s3-sync")]
-        Commands::S3Sync(args) => sync(args),
-        _ => !todo!(),
+        Commands::S3Sync(args) => sync(&args).await,
     }
 }
