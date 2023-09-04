@@ -1,3 +1,7 @@
+#![allow(unreachable_patterns)]
+
+use r_utils::hello;
+
 // S3 Sync
 #[cfg(feature = "s3-sync")]
 pub mod s3_sync;
@@ -11,9 +15,9 @@ pub mod s3;
 #[cfg(feature = "mfa")]
 pub mod mfa;
 
+// CLI
 #[cfg(feature = "cli")]
 use clap::{Parser, Subcommand};
-use r_utils::hello;
 
 #[cfg(feature = "cli")]
 #[derive(Parser)]

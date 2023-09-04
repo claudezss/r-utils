@@ -1,18 +1,16 @@
 pub mod schemas;
 pub use schemas::{AWSConfig, S3SyncArgs};
 
+use aws_sdk_s3::Client;
 use curl::easy::Easy;
 use serde_json::{from_slice, from_str, Value};
 use std::fs::{create_dir_all, read_dir, File};
 use std::io::Write;
 
-use crate::s3::{create_s3_client, get_objects, upload_object};
+use crate::s3::{create_s3_client, get_objects, s3_client, upload_object};
 
-pub async fn sync(args: &S3SyncArgs) {
-    let url = format!("https://api.claudezss.com/secret?token={}", args.token);
-
-    let upload: bool = args.upload.unwrap_or(false);
-
+async fn get_secrets(token: &str) -> Value {
+    let url = format!("https://api.claudezss.com/secret?token={}", token);
     let mut content: Value = Value::default();
 
     {
@@ -31,16 +29,36 @@ pub async fn sync(args: &S3SyncArgs) {
 
         transfer.perform().unwrap();
     }
+    content
+}
 
-    if content.get("aws").is_none() {
-        println!("Invalid Token");
-        return;
+pub async fn sync(args: &S3SyncArgs) {
+    let upload: bool = args.upload.unwrap_or(false);
+
+    let client: Client;
+
+    if std::env::var("AWS_ACCESS_KEY_ID").is_ok()
+        && std::env::var("AWS_DEFAULT_REGION").is_ok()
+        && std::env::var("AWS_SECRET_ACCESS_KEY").is_ok()
+    {
+        println!("Loading S3 secrets from env vars");
+        client = s3_client().await;
+    } else {
+        println!("Fetching S3 secrets from host");
+        let secrets = get_secrets(&args.token).await;
+
+        if secrets.get("aws").is_none() {
+            println!("Invalid Token");
+            return;
+        }
+
+        let aws_content = secrets["aws"].to_string();
+        let aws_config: AWSConfig = from_str(&aws_content).unwrap();
+        client = create_s3_client(&aws_config.region, &aws_config.key, &aws_config.secret).await;
     }
 
-    let aws_content = content["aws"].to_string();
-    let aws_config: AWSConfig = from_str(&aws_content).unwrap();
-    let client = create_s3_client(&aws_config.region, &aws_config.key, &aws_config.secret).await;
-    let files = get_objects(&client, "claudezss", &args.target_s3_path, Some(true))
+    println!("Fetching objects from prefix: {}", &args.target_s3_path);
+    let files = get_objects(&client, "claudezss", &args.target_s3_path, Some(!upload))
         .await
         .unwrap();
 
@@ -52,8 +70,10 @@ pub async fn sync(args: &S3SyncArgs) {
         }
 
         for f in files {
-            println!("Writing file: {}", f.name);
-            let path = format!("{}/{}", args.path.to_str().unwrap(), f.name);
+            let path_str = format!("{}/{}", args.path.to_str().unwrap(), f.name);
+            let path = std::path::Path::new(&path_str).to_str().unwrap();
+
+            println!("Writing file: {}", path);
             let mut output = File::create(path).unwrap();
             write!(output, "{}", f.content).unwrap()
         }
@@ -73,14 +93,10 @@ pub async fn sync(args: &S3SyncArgs) {
                 args.target_s3_path,
                 path.file_name().unwrap().to_str().unwrap()
             );
-            let target_key_path = std::path::Path::new(&target_key_str);
-            upload_object(
-                &client,
-                "claudezss",
-                &file_path,
-                target_key_path.to_str().unwrap(),
-            )
-            .await;
+            let target_key_path = std::path::Path::new(&target_key_str).to_str().unwrap();
+
+            println!("Uploading object {} to {}", &file_path, target_key_path);
+            upload_object(&client, "claudezss", &file_path, target_key_path).await;
         }
     }
 }
