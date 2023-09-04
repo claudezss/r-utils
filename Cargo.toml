@@ -4,6 +4,7 @@ version = "0.0.0-dev4"
 edition = "2021"
 license = "MIT"
 description = "common utils functions in rust"
+repository = "https://github.com/claudezss/r-utils"
 
 
 [lib]
