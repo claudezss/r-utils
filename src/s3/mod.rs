@@ -85,3 +85,16 @@ pub async fn get_objects(
 
     Ok(objects_vec)
 }
+
+pub async fn upload_object(client: &s3::Client, bucket_name: &str, file_path: &str, key: &str) {
+    let body = s3::primitives::ByteStream::from_path(std::path::Path::new(file_path)).await;
+
+    client
+        .put_object()
+        .bucket(bucket_name)
+        .key(key)
+        .body(body.unwrap())
+        .send()
+        .await
+        .unwrap();
+}

@@ -1,5 +1,5 @@
-// #[cfg(feature = "s3")]
-// pub mod s3 {pub mod t;}
+#[cfg(feature = "s3")]
+pub mod s3;
 
 #[cfg(feature = "mfa")]
 pub mod mfa;

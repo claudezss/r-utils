@@ -6,7 +6,6 @@ pub struct S3SyncArgs {
     pub token: String,
     pub path: std::path::PathBuf,
     pub target_s3_path: String,
-    pub download: Option<bool>,
     pub upload: Option<bool>,
 }
 
