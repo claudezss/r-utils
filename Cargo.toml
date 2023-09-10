@@ -1,39 +1,5 @@
-[package]
-name = "r-utils"
-version = "0.0.0-dev5"
-edition = "2021"
-license = "MIT"
-description = "common utils functions in rust"
-repository = "https://github.com/claudezss/r-utils"
-
-[lib]
-name = "r_utils"
-path = "src/lib.rs"
-
-
-[dependencies]
-serde = {version = "1", features = ["derive"]}
-serde_json = {version = "1"}
-dotenv = {version = "0"}
-tokio = {version = "1", features = ["full"]}
-
-# cli
-clap = {version = "4", features = ["derive"], optional = true}
-
-# s3
-aws-config = {version = "0", optional = true}
-aws-sdk-s3 = {version = "0", optional = true}
-chrono = {version = "0", optional = true}
-
-# s3-sync
-curl = {version = "0", optional = true}
-
-
-# mfa
-totp-rs = {version = "5", features = ["qr"], optional = true}
-
-[features]
-cli = ["dep:clap"]
-s3 = ["dep:aws-config", "dep:aws-sdk-s3", "dep:chrono"]
-s3-sync = ["cli", "s3", "dep:curl"]
-mfa = ["dep:totp-rs"]
+[workspace]
+resolver = "2"
+members = [
+    "r-utils",
+]
